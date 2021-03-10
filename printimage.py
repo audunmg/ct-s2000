@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 
-import Image, ImageChops
+from PIL import Image, ImageChops
 import array
 import sys
 import os
@@ -14,21 +14,21 @@ img = ImageChops.invert(img)
 img = img.convert('1')
 '''Pixels are lost on the sides. It can print 575 pixels wide, 1 pixel row lost to the left, a bunch to the right.'''
 '''The max pixel width can be set and read somehow. Coming soon i guess.'''
-if img.width > 575:
-    img.thumbnail(size=(575,2048))  # max height is here.
+if img.width > 550:
+    img.thumbnail(size=(550,2048))  # max height is here.
                                     # The max height using the bitimage mode is virtually unlimited. 
                                     # Increase at will
 
 
 
-LF="\n" # 0x0a
-CR="\x0d"
-FF="\x0c"
-ESC="\x1b"
-GS="\x1d"
-HT="\t" # 0x09
+LF=b"\n" # 0x0a
+CR=b"\x0d"
+FF=b"\x0c"
+ESC=b"\x1b"
+GS=b"\x1d"
+HT=b"\t" # 0x09
 
-print "Found image: " + str(img.width) + "x" + str(img.height)
+print("Found image: " + str(img.width) + "x" + str(img.height))
 
 def getPrintableImage(image):
     ''' Image must be a multiple of twentyfour, so rounding up to nearest '''
@@ -43,7 +43,7 @@ def getPrintableImage(image):
 
 
 def bitModeImage(image):
-    data = ''
+    data = b''
     img = image.transpose(Image.FLIP_LEFT_RIGHT)
     height = img.height
     width = img.width
@@ -54,23 +54,23 @@ def bitModeImage(image):
         else:
             ybk = yRemain
 
-        data += "\x1b" + "*" + chr(33) # ESC * mode 33 - Bit Image Command
+        data += b"\x1b" + b"*" + bytes([33]) # ESC * mode 33 - Bit Image Command
         # Width of image, low byte first
-        data += chr(width - (width >> 8 << 8)) # n1
-        data += chr(width >> 8 )               # n2
+        data += bytes([(width - (width >> 8 << 8))]) # n1
+        data += bytes([(width >> 8 )])               # n2
         data += img.crop((0,y,width,y+ybk)).transpose(Image.ROTATE_90).tobytes()
-        data += "\x1bJ\x00" # ESC J n - Printing and feeding paper in minimum pitch
+        data += b"\x1bJ\x00" # ESC J n - Printing and feeding paper in minimum pitch
     return data
 
 
 
 
-printerInitializeCommand = ESC + "@"
-startPageCommand=ESC + "2"
+printerInitializeCommand = ESC + b"@"
+startPageCommand=ESC + b"2"
 endPageCommand= FF
-endJobCommand= GS + "r1"
-pageCutCommand= GS + "VA" + "\x00" # Can also use ESC + "I"
-BuzzerCommand=ESC + "\x1e"         # Beep!
+endJobCommand= GS + b"r1"
+pageCutCommand= GS + b"VA" + b"\x00" # Can also use ESC + "I"
+BuzzerCommand=ESC + b"\x1e"         # Beep!
 
 printimage = getPrintableImage(img)
 
@@ -80,7 +80,7 @@ os.write(fd, printerInitializeCommand)
 os.write(fd, bitModeImage(printimage))
 
 '''There is a physical space of about four newlines between the printer head and the paper cutter'''
-os.write(fd, "\n\n\n\n")
+os.write(fd, b"\n\n\n\n")
 os.write(fd, pageCutCommand)
 
 
