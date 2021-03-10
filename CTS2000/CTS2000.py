@@ -21,7 +21,7 @@ class CTS2000:
         msw = ['']
         #fd = os.open("/dev/usb/lp0", os.O_RDWR)
         for i in range(1,6):
-            os.write(self.fd, "\x1d(E\x02\x00\x04" + chr(i))
+            os.write(self.fd, b"\x1d(E\x02\x00\x04" + bytes([i]))
             sw = os.read(self.fd,11)
             # This is to grab byte 2-10 from the printer output, reverse it and prepend space
             #
@@ -29,7 +29,7 @@ class CTS2000:
             # in reverse order, and the documentation documents settings like
             # MSW[1-5,7-10]-[1-8] and i like addressing MSW1-1 as msw[1][1]
             # As far as i know, this command \x1d(E\x02\x00\x04 only allows viewing MSW[1-5].
-            msw.append(' ' + sw[2:10][::-1])
+            msw.append(b' ' + sw[2:10][::-1])
         msw = [' ', ' 00000000', ' 11000000', ' 00000010', ' 00100001', ' 00100100']
         # I try to use the documented setting name here:
         self.setting['PowerOnInfo']   = msw[1][1] == '1'
@@ -78,7 +78,7 @@ class CTS2000:
 
     def getCustomValues(self):
         for a in [ 1,2,3,5,6,116,201,202 ]:
-            os.write(self.fd, "\x1d(E\x02\x00\x06"+chr(a))
+            os.write(self.fd, b"\x1d(E\x02\x00\x06"+bytes([a]))
             sends = os.read(self.fd,12)
             # Data is returned from printer like:
             # "7'"+ string of number + \x1f ("separation number"),
@@ -206,7 +206,7 @@ class CTS2000:
         for a in (1,2,3,4):
             # There is also parameters 119 and 120 which seems to be not working on my printer.
             # Probably works if you install a parallel port? Who knows.
-            os.write(self.fd, "\x1d(E\x02\x00\x0c"+chr(a))
+            os.write(self.fd, b"\x1d(E\x02\x00\x0c"+bytes([a]))
             sends = os.read(self.fd,12)
             if sends[0:3+len(str(a))] == "73"+str(a) + "\x1f":
                 value = sends[4:-1]
@@ -232,19 +232,15 @@ class CTS2000:
                     if value == '1':
                         self.setting['serial_length'] = '8'
     def resetSettings(self,settings):
-        resetcommand = "\x1d(E\x02\x00\xff"
+        resetcommand = b"\x1d(E\x02\x00\xff"
         if settings == 'memoryswitch':
-            os.write(self.fd, resetcommand + chr(3))
+            os.write(self.fd, resetcommand + bytes([3]))
         if settings == 'customvalue':
-            os.write(self.fd, resetcommand + chr(5))
+            os.write(self.fd, resetcommand + bytes([5]))
         if settings == 'charcode':
-            os.write(self.fd, resetcommand + chr(7))
+            os.write(self.fd, resetcommand + bytes([7]))
         if settings == 'serial':
-            os.write(self.fd, resetcommand + chr(11))
+            os.write(self.fd, resetcommand + bytes([11]))
         if settings == 'all':
-            os.write(self.fd, resetcommand + chr(255))
+            os.write(self.fd, resetcommand + bytes([255]))
         self.getSettings()
-
-
-
-
